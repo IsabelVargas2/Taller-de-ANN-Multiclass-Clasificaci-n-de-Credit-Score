@@ -1,6 +1,5 @@
 import streamlit as st
 import numpy as np
-import pandas as pd
 import joblib
 import os
 
@@ -15,7 +14,6 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap');
     html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
-    .main { background-color: #0d1117; }
     .stApp { background: linear-gradient(135deg, #0d1117 0%, #161b22 100%); }
     h1, h2, h3 { font-family: 'Space Mono', monospace !important; }
     .header-box { background: linear-gradient(90deg, #1f6feb 0%, #388bfd 100%); border-radius: 12px; padding: 28px 36px; margin-bottom: 32px; box-shadow: 0 4px 32px rgba(31,111,235,0.3); }
@@ -59,7 +57,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if model is None:
-    st.error("⚠️ No se encontraron los archivos del modelo (ann_credit_score.keras/.h5, scaler.pkl, pca.pkl).")
+    st.error("⚠️ No se encontraron los archivos del modelo.")
     st.stop()
 
 col_inputs, col_result = st.columns([2, 1], gap="large")
@@ -70,7 +68,13 @@ with col_inputs:
     with c1:
         age = st.slider("Edad", 18, 80, 35)
     with c2:
-        occupation = st.selectbox("Ocupación", ["Scientist","Teacher","Engineer","Entrepreneur","Developer","Lawyer","Media_Manager","Doctor","Journalist","Manager","Accountant","Musician","Mechanic","Writer","Architect"])
+        # Occupation: LabelEncoder alfabético sobre valores del dataset
+        # Valores únicos del dataset (alfabético = orden del LabelEncoder)
+        occupation = st.selectbox("Ocupación", [
+            "Accountant","Architect","Developer","Doctor","Engineer",
+            "Entrepreneur","Journalist","Lawyer","Manager","Media_Manager",
+            "Mechanic","Musician","Scientist","Teacher","Writer"
+        ])
     with c3:
         annual_income = st.slider("Ingreso Anual (USD)", 7000, 180000, 50000, step=1000)
 
@@ -78,91 +82,150 @@ with col_inputs:
     with c4:
         monthly_salary = st.slider("Salario Mensual Neto (USD)", 300, 15000, 4000, step=100)
     with c5:
-        monthly_balance = st.slider("Balance Mensual (USD)", -500, 1500, 300, step=50)
-
-    st.markdown('<br>', unsafe_allow_html=True)
-    st.markdown('<p class="section-title">🏦 Cuentas y Tarjetas</p>', unsafe_allow_html=True)
-    c6, c7, c8 = st.columns(3)
-    with c6:
         num_bank_accounts = st.slider("N° Cuentas Bancarias", 0, 10, 3)
-    with c7:
+
+    c6, c7 = st.columns(2)
+    with c6:
         num_credit_card = st.slider("N° Tarjetas de Crédito", 0, 11, 4)
+    with c7:
+        interest_rate = st.slider("Tasa de Interés (%)", 1, 34, 14)
+
+    c8, c9 = st.columns(2)
     with c8:
         num_of_loan = st.slider("N° de Préstamos", 0, 9, 2)
-
-    c9, c10 = st.columns(2)
     with c9:
-        interest_rate = st.slider("Tasa de Interés (%)", 1, 34, 14)
-    with c10:
-        credit_utilization = st.slider("Utilización de Crédito (%)", 0.0, 100.0, 30.0, step=0.5)
+        delay_from_due = st.slider("Días de Retraso", 0, 62, 10)
 
     st.markdown('<br>', unsafe_allow_html=True)
     st.markdown('<p class="section-title">📅 Comportamiento de Pago</p>', unsafe_allow_html=True)
-    c11, c12, c13 = st.columns(3)
-    with c11:
-        delay_from_due = st.slider("Días de Retraso", 0, 62, 10)
-    with c12:
+    c10, c11, c12 = st.columns(3)
+    with c10:
         num_delayed_payment = st.slider("N° Pagos Atrasados", 0, 28, 5)
-    with c13:
+    with c11:
+        changed_credit_limit = st.slider("Cambio Límite de Crédito", -10.0, 30.0, 5.0, step=0.5)
+    with c12:
         num_credit_inquiries = st.slider("N° Consultas de Crédito", 0, 17, 3)
 
-    c14, c15 = st.columns(2)
+    c13, c14 = st.columns(2)
+    with c13:
+        # Credit_Mix: LabelEncoder alfabético → Bad=0, Good=1, Standard=2
+        credit_mix = st.selectbox("Mezcla de Crédito", ["Good", "Standard", "Bad"])
     with c14:
-        payment_min_amount = st.selectbox("¿Paga el Mínimo?", ["Yes", "No", "NM"])
-    with c15:
-        payment_behaviour = st.selectbox("Comportamiento de Pago", ["High_spent_Small_value_payments","Low_spent_Large_value_payments","High_spent_Medium_value_payments","Low_spent_Small_value_payments","High_spent_Large_value_payments","Low_spent_Medium_value_payments"])
+        outstanding_debt = st.slider("Deuda Pendiente (USD)", 0.0, 5000.0, 800.0, step=10.0)
 
     st.markdown('<br>', unsafe_allow_html=True)
     st.markdown('<p class="section-title">💰 Deuda e Inversión</p>', unsafe_allow_html=True)
-    c16, c17, c18 = st.columns(3)
+    c15, c16, c17 = st.columns(3)
+    with c15:
+        credit_utilization = st.slider("Utilización de Crédito (%)", 0.0, 100.0, 30.0, step=0.5)
     with c16:
-        outstanding_debt = st.slider("Deuda Pendiente (USD)", 0.0, 5000.0, 800.0, step=10.0)
+        credit_history_age = st.slider("Antigüedad Historial (meses)", 0, 400, 180)
     with c17:
-        total_emi = st.slider("EMI Mensual Total (USD)", 0.0, 2000.0, 100.0, step=5.0)
+        # Payment_of_Min_Amount: LabelEncoder alfabético → NM=0, No=1, Yes=2
+        payment_min_amount = st.selectbox("¿Paga el Mínimo?", ["Yes", "No", "NM"])
+
+    c18, c19 = st.columns(2)
     with c18:
+        total_emi = st.slider("EMI Mensual Total (USD)", 0.0, 2000.0, 100.0, step=5.0)
+    with c19:
         amount_invested = st.slider("Inversión Mensual (USD)", 0.0, 2000.0, 200.0, step=10.0)
 
-    c19, c20 = st.columns(2)
-    with c19:
-        credit_history_age = st.slider("Antigüedad Historial Crediticio (meses)", 0, 400, 180)
+    c20, c21 = st.columns(2)
     with c20:
-        changed_credit_limit = st.slider("Cambio en Límite de Crédito", -10.0, 30.0, 5.0, step=0.5)
+        # Payment_Behaviour: LabelEncoder alfabético
+        payment_behaviour = st.selectbox("Comportamiento de Pago", [
+            "High_spent_Large_value_payments",
+            "High_spent_Medium_value_payments",
+            "High_spent_Small_value_payments",
+            "Low_spent_Large_value_payments",
+            "Low_spent_Medium_value_payments",
+            "Low_spent_Small_value_payments"
+        ])
+    with c21:
+        monthly_balance = st.slider("Balance Mensual (USD)", -500, 1500, 300, step=50)
 
     st.markdown('<br>', unsafe_allow_html=True)
-    st.markdown('<p class="section-title">🔀 Tipo de Crédito</p>', unsafe_allow_html=True)
-    c21, c22 = st.columns(2)
-    with c21:
-        credit_mix = st.selectbox("Mezcla de Crédito", ["Good", "Standard", "Bad"])
-    with c22:
-        type_of_loan = st.selectbox("Tipo de Préstamo Principal", ["Personal Loan","Home Equity Loan","Mortgage Loan","Auto Loan","Student Loan","Payday Loan","Credit-Builder Loan"])
+    st.markdown('<p class="section-title">🔀 Tipo de Préstamo</p>', unsafe_allow_html=True)
+    # Type_of_Loan: solo 5 valores únicos en el dataset (LabelEncoder alfabético)
+    type_of_loan = st.selectbox("Tipo de Préstamo Principal", [
+        "Auto Loan", "Credit-Builder Loan", "Home Equity Loan",
+        "Mortgage Loan", "Personal Loan"
+    ])
 
-occupation_map = {"Accountant":0,"Architect":1,"Developer":2,"Doctor":3,"Engineer":4,"Entrepreneur":5,"Journalist":6,"Lawyer":7,"Manager":8,"Media_Manager":9,"Mechanic":10,"Musician":11,"Scientist":12,"Teacher":13,"Writer":14}
-credit_mix_map = {"Bad":0,"Good":1,"Standard":2}
-payment_min_map = {"NM":0,"No":1,"Yes":2}
-payment_beh_map = {"High_spent_Large_value_payments":0,"High_spent_Medium_value_payments":1,"High_spent_Small_value_payments":2,"Low_spent_Large_value_payments":3,"Low_spent_Medium_value_payments":4,"Low_spent_Small_value_payments":5}
-loan_type_map = {"Auto Loan":0,"Credit-Builder Loan":1,"Home Equity Loan":2,"Mortgage Loan":3,"Payday Loan":4,"Personal Loan":5,"Student Loan":6}
+# ── Mapas de encoding (LabelEncoder alfabético, igual que el notebook) ────────
+occupation_map = {
+    "Accountant":0,"Architect":1,"Developer":2,"Doctor":3,"Engineer":4,
+    "Entrepreneur":5,"Journalist":6,"Lawyer":7,"Manager":8,"Media_Manager":9,
+    "Mechanic":10,"Musician":11,"Scientist":12,"Teacher":13,"Writer":14
+}
+# Credit_Mix: alfabético Bad=0, Good=1, Standard=2
+credit_mix_map = {"Bad":0, "Good":1, "Standard":2}
+# Payment_of_Min_Amount: alfabético NM=0, No=1, Yes=2
+payment_min_map = {"NM":0, "No":1, "Yes":2}
+# Payment_Behaviour: alfabético
+payment_beh_map = {
+    "High_spent_Large_value_payments":0,
+    "High_spent_Medium_value_payments":1,
+    "High_spent_Small_value_payments":2,
+    "Low_spent_Large_value_payments":3,
+    "Low_spent_Medium_value_payments":4,
+    "Low_spent_Small_value_payments":5
+}
+# Type_of_Loan: solo 5 valores únicos en dataset (alfabético)
+loan_type_map = {
+    "Auto Loan":0, "Credit-Builder Loan":1, "Home Equity Loan":2,
+    "Mortgage Loan":3, "Personal Loan":4
+}
 
 with col_result:
     st.markdown('<p class="section-title">🎯 Resultado</p>', unsafe_allow_html=True)
     predict_btn = st.button("🔮 Predecir Credit Score", use_container_width=True, type="primary")
 
     if predict_btn:
+        # ── ORDEN EXACTO del entrenamiento (22 columnas) ──────────────────────
+        # Cell 12 output: Age, Occupation, Annual_Income, Monthly_Inhand_Salary,
+        # Num_Bank_Accounts, Num_Credit_Card, Interest_Rate, Num_of_Loan,
+        # Delay_from_due_date, Num_of_Delayed_Payment, Changed_Credit_Limit,
+        # Num_Credit_Inquiries, Credit_Mix, Outstanding_Debt,
+        # Credit_Utilization_Ratio, Credit_History_Age, Payment_of_Min_Amount,
+        # Total_EMI_per_month, Amount_invested_monthly, Payment_Behaviour,
+        # Monthly_Balance, Type_of_Loan
         features = np.array([[
-            age, occupation_map.get(occupation, 0), annual_income, monthly_salary,
-            num_bank_accounts, num_credit_card, interest_rate, num_of_loan,
-            loan_type_map.get(type_of_loan, 0), delay_from_due, num_delayed_payment,
-            changed_credit_limit, num_credit_inquiries, credit_mix_map.get(credit_mix, 0),
-            outstanding_debt, credit_utilization, credit_history_age,
-            payment_min_map.get(payment_min_amount, 0), total_emi, amount_invested,
-            payment_beh_map.get(payment_behaviour, 0), monthly_balance
+            age,                                        # 0  Age
+            occupation_map[occupation],                 # 1  Occupation
+            annual_income,                              # 2  Annual_Income
+            monthly_salary,                             # 3  Monthly_Inhand_Salary
+            num_bank_accounts,                          # 4  Num_Bank_Accounts
+            num_credit_card,                            # 5  Num_Credit_Card
+            interest_rate,                              # 6  Interest_Rate
+            num_of_loan,                                # 7  Num_of_Loan
+            delay_from_due,                             # 8  Delay_from_due_date
+            num_delayed_payment,                        # 9  Num_of_Delayed_Payment
+            changed_credit_limit,                       # 10 Changed_Credit_Limit
+            num_credit_inquiries,                       # 11 Num_Credit_Inquiries
+            credit_mix_map[credit_mix],                 # 12 Credit_Mix
+            outstanding_debt,                           # 13 Outstanding_Debt
+            credit_utilization,                         # 14 Credit_Utilization_Ratio
+            credit_history_age,                         # 15 Credit_History_Age
+            payment_min_map[payment_min_amount],        # 16 Payment_of_Min_Amount
+            total_emi,                                  # 17 Total_EMI_per_month
+            amount_invested,                            # 18 Amount_invested_monthly
+            payment_beh_map[payment_behaviour],         # 19 Payment_Behaviour
+            monthly_balance,                            # 20 Monthly_Balance
+            loan_type_map[type_of_loan],                # 21 Type_of_Loan
         ]], dtype=float)
 
+        # Escalar las 22 columnas (el scaler fue entrenado con 22)
         features_scaled = scaler.transform(features)
         features_scaled = np.nan_to_num(features_scaled)
-        features_scaled = features_scaled[:, :18]
-        features_pca = pca.transform(features_scaled)
 
-        # CORRECCIÓN CLAVE: model.predict() para Keras, NO predict_proba()
+        # PCA fue entrenado con 18 columnas (shape (12500,18) — cell 19)
+        # El notebook tenía X_scaled con shape 18 ANTES del PCA
+        # Eso significa que el imputer redujo a 18 columnas
+        # Pasamos las primeras 18 columnas al PCA
+        features_scaled_18 = features_scaled[:, :18]
+        features_pca = pca.transform(features_scaled_18)
+
         probs = model.predict(features_pca)[0]
         clase_pred = int(np.argmax(probs))
 
@@ -182,12 +245,17 @@ with col_result:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown(f"<br><small style='color:#8b949e'>{desc_map[clase_pred]}</small>", unsafe_allow_html=True)
+        st.markdown(f"<br><small style='color:#8b949e'>{desc_map[clase_pred]}</small>",
+                    unsafe_allow_html=True)
         st.markdown("<br>**Probabilidades:**", unsafe_allow_html=True)
 
         for i, (label, prob) in enumerate(zip(["Poor", "Standard", "Good"], probs)):
-            st.markdown(f'<p class="prob-bar-label">{emoji_map[i]} {label}: {prob*100:.1f}%</p>', unsafe_allow_html=True)
+            st.markdown(
+                f'<p class="prob-bar-label">{emoji_map[i]} {label}: {prob*100:.1f}%</p>',
+                unsafe_allow_html=True
+            )
             st.progress(float(prob))
+
     else:
         st.info("👈 Ajusta los parámetros del cliente y presiona **Predecir**.")
         st.markdown("""
@@ -200,4 +268,8 @@ with col_result:
         """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("<center><small style='color:#484f58'>ANN Multiclass · Taller de Deep Learning · Modelo: PCA + Red Neuronal Artificial</small></center>", unsafe_allow_html=True)
+st.markdown(
+    "<center><small style='color:#484f58'>ANN Multiclass · Taller de Deep Learning · "
+    "Modelo: PCA + Red Neuronal Artificial</small></center>",
+    unsafe_allow_html=True
+)
