@@ -3,8 +3,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import os
-import keras
-
+from tensorflow import keras
 # ── Configuración de página ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="Credit Score Predictor",
