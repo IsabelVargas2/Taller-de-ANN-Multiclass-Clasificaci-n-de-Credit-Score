@@ -1,7 +1,8 @@
-tensorflow-cpu==2.15.0
-scikit-learn
-pandas
+keras
 numpy
+pandas
+scikit-learn
 streamlit
 joblib
 openpyxl
+h5py

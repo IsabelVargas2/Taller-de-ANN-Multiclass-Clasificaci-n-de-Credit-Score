@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import os
-from tensorflow import keras
+import keras
 
 # ── Configuración de página ──────────────────────────────────────────────────
 st.set_page_config(
