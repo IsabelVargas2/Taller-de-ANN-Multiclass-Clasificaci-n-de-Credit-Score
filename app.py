@@ -317,12 +317,15 @@ with col_result:
 
         # Preprocesar
         features = features.astype(float)
-        
+
         features_scaled = scaler.transform(features)
 
         # Evitar errores por valores NaN o infinitos
         features_scaled = np.nan_to_num(features_scaled)
 
+        # Ajustar número de variables al PCA
+        features_scaled = features_scaled[:, :18]
+        
         features_pca = pca.transform(features_scaled)
 
         # Predecir
