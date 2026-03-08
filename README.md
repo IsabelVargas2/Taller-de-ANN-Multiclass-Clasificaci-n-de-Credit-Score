@@ -5,7 +5,7 @@ Aplicación de Red Neuronal Artificial (ANN) multiclase para predecir el puntaje
 ## 🔗 Enlaces
 
 - **Aplicación Streamlit:** [https://taller-de-ann-multiclass-clasificaci-n-de-credit-score-ssreefs.streamlit.app](https://taller-de-ann-multiclass-clasificaci-n-de-credit-score-ssreefs.streamlit.app)
-- **Repositorio GitHub:** [https://github.com/IsabelVargas2/Taller-de-ANN-Multiclass-Clasificaci-n-de-Credit-Score](https://github.com/IsabelVargas2/Taller-de-ANN-Multiclass-Clasificaci-n-de-Credit-Score)
+- **Repositorio GitHub:** [https://github.com/IsabelVargas2/Taller-de-ANN-Multiclass-Clasificaci-n-de-Credit-Score](https://github.com/IsabelVargas2/Taller-de-ANN-Multiclass-Clasificaci-n-de-Credit-Score.git)
 
 ## 📋 Descripción
 
