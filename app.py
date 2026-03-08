@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import os
-from tensorflow import keras
+
 # ── Configuración de página ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="Credit Score Predictor",
@@ -135,7 +135,7 @@ st.markdown("""
 @st.cache_resource
 def load_model_and_preprocessors():
     try:
-        model = keras.models.load_model('ann_credit_score.h5')
+        model = joblib.load('credit_model.pkl')
         scaler = joblib.load('scaler.pkl')
         pca    = joblib.load('pca.pkl')
         return model, scaler, pca
@@ -158,9 +158,9 @@ if model is None:
     ⚠️ **No se encontraron los archivos del modelo.**
     
     Asegúrate de que los siguientes archivos estén en la misma carpeta que `app.py`:
-    - `ann_credit_score.h5`
-    - `scaler.pkl`
-    - `pca.pkl`
+    - credit_model.pkl
+    - scaler.pkl
+    - pca.pkl
     """)
     st.stop()
 
@@ -168,7 +168,6 @@ if model is None:
 col_inputs, col_result = st.columns([2, 1], gap="large")
 
 with col_inputs:
-    # ── Sección 1: Información Personal ──────────────────────────────────────
     st.markdown('<p class="section-title">👤 Información Personal</p>', unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -190,33 +189,31 @@ with col_inputs:
 
     st.markdown('<br>', unsafe_allow_html=True)
 
-    # ── Sección 2: Cuentas y Tarjetas ─────────────────────────────────────────
     st.markdown('<p class="section-title">🏦 Cuentas y Tarjetas</p>', unsafe_allow_html=True)
     c6, c7, c8 = st.columns(3)
     with c6:
-        num_bank_accounts = st.slider("N° Cuentas Bancarias", min_value=0, max_value=10, value=3)
+        num_bank_accounts = st.slider("N° Cuentas Bancarias", 0, 10, 3)
     with c7:
-        num_credit_card = st.slider("N° Tarjetas de Crédito", min_value=0, max_value=11, value=4)
+        num_credit_card = st.slider("N° Tarjetas de Crédito", 0, 11, 4)
     with c8:
-        num_of_loan = st.slider("N° de Préstamos", min_value=0, max_value=9, value=2)
+        num_of_loan = st.slider("N° de Préstamos", 0, 9, 2)
 
     c9, c10 = st.columns(2)
     with c9:
-        interest_rate = st.slider("Tasa de Interés (%)", min_value=1, max_value=34, value=14)
+        interest_rate = st.slider("Tasa de Interés (%)", 1, 34, 14)
     with c10:
-        credit_utilization = st.slider("Utilización de Crédito (%)", min_value=0.0, max_value=100.0, value=30.0, step=0.5)
+        credit_utilization = st.slider("Utilización de Crédito (%)", 0.0, 100.0, 30.0, step=0.5)
 
     st.markdown('<br>', unsafe_allow_html=True)
 
-    # ── Sección 3: Comportamiento de Pago ────────────────────────────────────
     st.markdown('<p class="section-title">📅 Comportamiento de Pago</p>', unsafe_allow_html=True)
     c11, c12, c13 = st.columns(3)
     with c11:
-        delay_from_due = st.slider("Días de Retraso", min_value=0, max_value=62, value=10)
+        delay_from_due = st.slider("Días de Retraso", 0, 62, 10)
     with c12:
-        num_delayed_payment = st.slider("N° Pagos Atrasados", min_value=0, max_value=28, value=5)
+        num_delayed_payment = st.slider("N° Pagos Atrasados", 0, 28, 5)
     with c13:
-        num_credit_inquiries = st.slider("N° Consultas de Crédito", min_value=0, max_value=17, value=3)
+        num_credit_inquiries = st.slider("N° Consultas de Crédito", 0, 17, 3)
 
     c14, c15 = st.columns(2)
     with c14:
@@ -233,24 +230,23 @@ with col_inputs:
 
     st.markdown('<br>', unsafe_allow_html=True)
 
-    # ── Sección 4: Deuda e Inversión ──────────────────────────────────────────
     st.markdown('<p class="section-title">💰 Deuda e Inversión</p>', unsafe_allow_html=True)
     c16, c17, c18 = st.columns(3)
     with c16:
-        outstanding_debt = st.slider("Deuda Pendiente (USD)", min_value=0.0, max_value=5000.0, value=800.0, step=10.0)
+        outstanding_debt = st.slider("Deuda Pendiente (USD)", 0.0, 5000.0, 800.0, step=10.0)
     with c17:
-        total_emi = st.slider("EMI Mensual Total (USD)", min_value=0.0, max_value=2000.0, value=100.0, step=5.0)
+        total_emi = st.slider("EMI Mensual Total (USD)", 0.0, 2000.0, 100.0, step=5.0)
     with c18:
-        amount_invested = st.slider("Inversión Mensual (USD)", min_value=0.0, max_value=2000.0, value=200.0, step=10.0)
+        amount_invested = st.slider("Inversión Mensual (USD)", 0.0, 2000.0, 200.0, step=10.0)
 
     c19, c20 = st.columns(2)
     with c19:
-        credit_history_age = st.slider("Antigüedad Historial Crediticio (meses)", min_value=0, max_value=400, value=180)
+        credit_history_age = st.slider("Antigüedad Historial Crediticio (meses)", 0, 400, 180)
     with c20:
-        changed_credit_limit = st.slider("Cambio en Límite de Crédito", min_value=-10.0, max_value=30.0, value=5.0, step=0.5)
+        changed_credit_limit = st.slider("Cambio en Límite de Crédito", -10.0, 30.0, 5.0, step=0.5)
 
-    # ── Sección 5: Tipo de Crédito ────────────────────────────────────────────
     st.markdown('<br>', unsafe_allow_html=True)
+
     st.markdown('<p class="section-title">🔀 Tipo de Crédito</p>', unsafe_allow_html=True)
     c21, c22 = st.columns(2)
     with c21:
@@ -261,15 +257,16 @@ with col_inputs:
             "Auto Loan", "Student Loan", "Payday Loan", "Credit-Builder Loan"
         ])
 
-# ── Encodings manuales (deben coincidir con el entrenamiento) ─────────────────
 occupation_map = {
     "Accountant": 0, "Architect": 1, "Developer": 2, "Doctor": 3,
     "Engineer": 4, "Entrepreneur": 5, "Journalist": 6, "Lawyer": 7,
     "Manager": 8, "Media_Manager": 9, "Mechanic": 10, "Musician": 11,
     "Scientist": 12, "Teacher": 13, "Writer": 14
 }
+
 credit_mix_map   = {"Bad": 0, "Good": 1, "Standard": 2}
 payment_min_map  = {"NM": 0, "No": 1, "Yes": 2}
+
 payment_beh_map  = {
     "High_spent_Large_value_payments": 0,
     "High_spent_Medium_value_payments": 1,
@@ -278,19 +275,21 @@ payment_beh_map  = {
     "Low_spent_Medium_value_payments": 4,
     "Low_spent_Small_value_payments": 5
 }
+
 loan_type_map = {
     "Auto Loan": 0, "Credit-Builder Loan": 1, "Home Equity Loan": 2,
     "Mortgage Loan": 3, "Payday Loan": 4, "Personal Loan": 5, "Student Loan": 6
 }
 
-# ── Botón de predicción ───────────────────────────────────────────────────────
 with col_result:
     st.markdown('<p class="section-title">🎯 Resultado</p>', unsafe_allow_html=True)
+
     predict_btn = st.button("🔮 Predecir Credit Score", use_container_width=True, type="primary")
 
     if predict_btn:
-        # Construir vector de features (mismo orden que en el entrenamiento)
+
         features = np.array([[
+
             age,
             occupation_map.get(occupation, 0),
             annual_income,
@@ -313,28 +312,27 @@ with col_result:
             amount_invested,
             payment_beh_map.get(payment_behaviour, 0),
             monthly_balance
+
         ]])
 
-        # Preprocesar
         features = features.astype(float)
 
         features_scaled = scaler.transform(features)
 
-        # Evitar errores por valores NaN o infinitos
         features_scaled = np.nan_to_num(features_scaled)
 
-        # Ajustar número de variables al PCA
         features_scaled = features_scaled[:, :18]
-        
+
         features_pca = pca.transform(features_scaled)
 
-        # Predecir
-        probs      = model.predict(features_pca, verbose=0)[0]
+        probs = model.predict_proba(features_pca)[0]
+
         clase_pred = int(np.argmax(probs))
 
         labels_map = {0: "Poor", 1: "Standard", 2: "Good"}
         emoji_map  = {0: "🔴", 1: "🟡", 2: "🟢"}
         css_map    = {0: "result-poor", 1: "result-standard", 2: "result-good"}
+
         desc_map   = {
             0: "Alto riesgo crediticio. Se recomienda revisar hábitos de pago y reducir deudas.",
             1: "Riesgo crediticio medio. Hay oportunidades de mejora en el perfil financiero.",
@@ -351,12 +349,18 @@ with col_result:
         st.markdown(f"<br><small style='color:#8b949e'>{desc_map[clase_pred]}</small>", unsafe_allow_html=True)
 
         st.markdown("<br>**Probabilidades:**", unsafe_allow_html=True)
-        colors = {0: "#f85149", 1: "#d29922", 2: "#3fb950"}
+
         for i, (label, prob) in enumerate(zip(["Poor", "Standard", "Good"], probs)):
-            st.markdown(f'<p class="prob-bar-label">{emoji_map[i]} {label}: {prob*100:.1f}%</p>', unsafe_allow_html=True)
+
+            st.markdown(
+                f'<p class="prob-bar-label">{emoji_map[i]} {label}: {prob*100:.1f}%</p>',
+                unsafe_allow_html=True
+            )
+
             st.progress(float(prob))
 
     else:
+
         st.info("👈 Ajusta los parámetros del cliente y presiona **Predecir**.")
 
         st.markdown("""
@@ -370,8 +374,9 @@ with col_result:
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("---")
+
 st.markdown(
     "<center><small style='color:#484f58'>ANN Multiclass · Taller de Deep Learning · "
-    "Modelo: Dense(128→64→32→Softmax) + PCA</small></center>",
+    "Modelo: PCA + Machine Learning</small></center>",
     unsafe_allow_html=True
 )
