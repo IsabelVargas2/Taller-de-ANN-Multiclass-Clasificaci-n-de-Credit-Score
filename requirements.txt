@@ -2,7 +2,8 @@ keras
 numpy
 pandas
 scikit-learn
-streamlit
 joblib
 openpyxl
 h5py
+streamlit==1.35.0
+altair==5.3.0
