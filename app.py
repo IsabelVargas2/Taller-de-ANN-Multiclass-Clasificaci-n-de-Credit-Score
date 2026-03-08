@@ -316,8 +316,14 @@ with col_result:
         ]])
 
         # Preprocesar
+        features = features.astype(float)
+        
         features_scaled = scaler.transform(features)
-        features_pca    = pca.transform(features_scaled)
+
+        # Evitar errores por valores NaN o infinitos
+        features_scaled = np.nan_to_num(features_scaled)
+
+        features_pca = pca.transform(features_scaled)
 
         # Predecir
         probs      = model.predict(features_pca, verbose=0)[0]
